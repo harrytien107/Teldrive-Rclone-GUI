@@ -1,0 +1,5 @@
+# Ignore rclone configuration (may contain tokens/secrets)
+rclone.conf
+
+# Ignore local VS Code workspace file
+TeldriveRcloneApp.code-workspace

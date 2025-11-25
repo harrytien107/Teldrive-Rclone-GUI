@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="IE=9" />
+  <title>Teldrive Rclone Manager</title>
+  <HTA:APPLICATION 
+    APPLICATIONNAME="TeldriveRclone"
+    ID="TeldriveRclone"
+    BORDER="thick"
+    CAPTION="yes"
+    SHOWINTASKBAR="yes"
+    SINGLEINSTANCE="yes"
+    SYSMENU="yes"
+    WINDOWSTATE="normal"
+    SCROLL="auto"
+    MAXIMIZEBUTTON="yes"
+    MINIMIZEBUTTON="yes"
+    ICON="logo.ico"
+  />
+  <style>
+    html,body{height:100%;}
+    body { font-family: Segoe UI, Arial; margin: 14px; background:#0b1220; color:#e5e7eb; }
+    .group{background:#0f172a; border:1px solid #1f2a3a; padding:14px; margin-bottom:12px; border-radius:8px; box-shadow:0 1px 0 rgba(255,255,255,0.03) inset;}
+    label{display:block; margin:8px 0 6px; font-weight:600; color:#94a3b8;}
+    input[type=text], textarea{ width:100%; padding:8px 10px; border:1px solid #334155; background:#0b1220; color:#e5e7eb; border-radius:6px; outline:none; }
+    input[type=text]:focus, textarea:focus{ border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.25);}    
+    textarea{height:220px; font-family:Consolas,monospace; }
+    button{padding:8px 12px; margin-right:8px; background:#1f2937; color:#e5e7eb; border:1px solid #334155; border-radius:6px; cursor:pointer;}
+    button:hover{ background:#374151; }
+    .row{display:-ms-flexbox; display:flex; -ms-flex-align:center; align-items:center;}
+    .row > div:first-child {flex:1; -ms-flex:1;}
+    .row > div:last-child {flex:0 0 auto;}
+    /* Fallback for gap in old IE engines */
+    .row > div + div { margin-left:12px; }
+    h3{margin:2px 0 10px; font-weight:700; color:#e2e8f0;}
+    a{color:#93c5fd;}
+    .main{max-width: 900px; margin: 0 auto;}
+    .btn-row{display:-ms-flexbox; display:flex; -ms-flex-wrap:wrap; flex-wrap:wrap; margin-top:10px;}
+    .btn-row > * { margin-right:10px; margin-top:8px; }
+    .btn-row > *:last-child { margin-right:0; }
+    button{transition:background-color .15s ease, box-shadow .15s ease, transform .05s ease; min-height:34px;}
+    button:active{ transform: translateY(1px); }
+    button.primary{background:#2563eb; border-color:#1e40af; box-shadow:0 0 0 1px #1e40af inset, 0 1px 2px rgba(0,0,0,.3);}
+    button.primary:hover{background:#1d4ed8;}
+    .app-title{margin:0; font-size:32px; font-weight:800; color:#e5e7eb; text-align:center;}
+    .title{display:-ms-flexbox; display:flex; -ms-flex-align:center; align-items:center; -ms-flex-pack:center; justify-content:center; margin:10px 0 18px;}
+    .title img.logo{width:28px; height:28px; margin-right:8px; border-radius:4px;}
+    .row > div:last-child button{ height:36px; padding:8px 14px; }
+    input[type=text], textarea{ margin-top:4px; margin-bottom:6px; }
+    .status{display:inline-block; margin-top:4px; font-size:12px; color:#94a3b8;}
+    .status .dot{display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444; margin-right:6px; vertical-align:middle;}
+    .status.running .dot{ background:#22c55e; }
+  </style>
+  <script language="JScript">
+    var sh = new ActiveXObject("WScript.Shell");
+    var fso = new ActiveXObject("Scripting.FileSystemObject");
+    function id(x){ return document.getElementById(x); }
+    function expand(s){ return sh.ExpandEnvironmentStrings(s); }
+    var gAppDir = null;
+
+    function bootstrap(){
+      try{
+        // If running as 32-bit on 64-bit OS, Sysnative\mshta.exe is visible.
+        var sysnativeMshta = expand("%windir%") + "\\Sysnative\\mshta.exe";
+        if(location.search.indexOf("x64=1") < 0 && fso.FileExists(sysnativeMshta)){
+          var href = location.href + (location.search ? "&x64=1" : "?x64=1");
+          sh.Run('"' + sysnativeMshta + '" "' + href + '"', 1, false);
+          window.close();
+          return;
+        }
+      }catch(e){}
+      // Ensure dark background even if CSS fails to load fully
+      try{
+        document.body.style.backgroundColor = '#0b1220';
+        document.body.style.color = '#e5e7eb';
+      }catch(e){}
+
+      // Ensure logo.ico exists (convert from PNG URL on first run)
+      try{
+        var p = unescape(location.pathname);
+        if(p.charAt(0) == '/') p = p.substring(1);
+        var dir = fso.GetParentFolderName(p);
+        gAppDir = dir;
+        var icoPath = dir + "\\logo.ico";
+        if(!fso.FileExists(icoPath)){
+          var ps1 = dir + "\\_make_logo_ico.ps1";
+          var dirEsc = dir.replace(/\\/g, "\\\\");
+          var ps = [
+            "$ErrorActionPreference='Stop'",
+            "$u='https://teldrive-docs.pages.dev/images/logo.png'",
+            "$dir='" + dirEsc + "'",
+            "$png=Join-Path $dir 'logo.png'",
+            "$ico=Join-Path $dir 'logo.ico'",
+            "Invoke-WebRequest -Uri $u -OutFile $png -UseBasicParsing",
+            "Add-Type -AssemblyName System.Drawing",
+            "$img=[System.Drawing.Image]::FromFile($png)",
+            "$icon=[System.Drawing.Icon]::FromHandle($img.GetHicon())",
+            "$fs=New-Object IO.FileStream($ico,[IO.FileMode]::Create)",
+            "$icon.Save($fs)",
+            "$fs.Close()",
+            "$img.Dispose()"
+          ].join("\r\n");
+          var ts = fso.OpenTextFile(ps1, 2, true);
+          ts.Write(ps); ts.Close();
+          sh.Run('powershell -NoProfile -ExecutionPolicy Bypass -File "' + ps1 + '"', 0, true);
+          try{ fso.DeleteFile(ps1, true); }catch(ex){}
+        }
+      }catch(ex){}
+
+      onLoadInit();
+    }
+
+    function onLoadInit(){
+      id("txtRclonePath").value = "rclone";
+      id("txtRcloneConf").value = defaultRcloneConf();
+      id("txtTeldriveExe").value = "C:\\Users\\Tien\\.installer\\bin\\teldrive.exe";
+      id("txtTeldriveArgs").value = "";
+      id("txtSrc").value = 'pgs:/TheGdriveXbot';
+      id("txtDst").value = 'teldrive:/TheGdriveXbot';
+      id("txtRemoteName").value = 'teldrive';
+      id("txtTokenKey").value = 'access_token';
+      setTdStatus(false, 0);
+    }
+    function defaultRcloneConf(){ return expand("%APPDATA%") + "\\rclone\\rclone.conf"; }
+
+    function browseFileFor(targetId){
+      try{
+        var html = "<input type=file id=f><script>new ActiveXObject('Scripting.FileSystemObject').GetStandardStream(1).Write(document.getElementById('f').value);close()<" + "/script>";
+        var cmd = 'mshta.exe "about:' + html + '"';
+        var out = sh.Exec(cmd).StdOut.ReadAll();
+        out = out.replace(/\r?\n$/, "");
+        if(out) id(targetId).value = out;
+      }catch(e){ alert("Browse failed: " + e.message); }
+    }
+
+    function startTeldrive(){
+      var exe = id("txtTeldriveExe").value;
+      var args = id("txtTeldriveArgs").value;
+      if(!exe || !fso.FileExists(exe)){ alert("Chọn đúng đường dẫn teldrive.exe"); return; }
+      var targs = (args||"").replace(/^\s+|\s+$/g,'');
+      var fullArgs = (targs.toLowerCase().indexOf('run')===0) ? targs : ('run' + (targs?(' ' + targs):''));
+      var wd = "";
+      try{ wd = fso.GetParentFolderName(exe); }catch(_){ wd = ""; }
+      try{
+        // Open a visible console window running teldrive with working directory
+        var cmd = 'cmd /c start "Teldrive"' + (wd?(' /D "' + wd + '"'):'') + ' "' + exe + '" ' + fullArgs;
+        sh.Run(cmd, 1, false);
+        if(teldriveTimer){ window.clearInterval(teldriveTimer); teldriveTimer=null; }
+        if(teldriveTailTimer){ window.clearInterval(teldriveTailTimer); teldriveTailTimer=null; }
+        if(teldriveStatusTimer) window.clearInterval(teldriveStatusTimer);
+        teldriveStatusTimer = window.setInterval(updateTdStatus, 1500);
+        setTdStatus(true, 0);
+        ensureShowTdLog();
+        appendLog('logTeldrive', 'Teldrive starting (terminal)...');
+        openLocalhost();
+        startProbe();
+      }catch(e){ alert('Start failed: ' + e.message); }
+    }
+    function stopTeldrive(){
+      try{
+        if((!teldrivePid || teldrivePid<=0) && teldrivePidPath && fso.FileExists(teldrivePidPath)){
+          var r = fso.OpenTextFile(teldrivePidPath, 1, false); var s = r.ReadAll(); r.Close();
+          teldrivePid = parseInt(s.replace(/\s+/g,'').toString(), 10) || 0;
+        }
+        sh.Run('cmd /c taskkill /IM teldrive.exe /F', 0, true);
+        if(teldriveTimer){ window.clearInterval(teldriveTimer); teldriveTimer=null; }
+        if(teldriveTailTimer){ window.clearInterval(teldriveTailTimer); teldriveTailTimer=null; }
+        if(teldriveStatusTimer){ window.clearInterval(teldriveStatusTimer); teldriveStatusTimer=null; }
+        teldriveExec = null;
+        teldrivePid = 0; teldriveLogSnapshot = ""; teldriveLogPath = "";
+        try{ if(teldrivePidPath && fso.FileExists(teldrivePidPath)) fso.DeleteFile(teldrivePidPath, true); }catch(_){ }
+        setTdStatus(false, 0);
+        appendLog('logTeldrive', "Teldrive stopped");
+      }catch(e){ alert("Stop failed: " + e.message); }
+    }
+    function startTeldriveNoBrowser(){
+      var exe = id("txtTeldriveExe").value;
+      var args = id("txtTeldriveArgs").value;
+      if(!exe || !fso.FileExists(exe)){ alert("Chọn đúng đường dẫn teldrive.exe"); return; }
+      var targs = (args||"").replace(/^\s+|\s+$/g,'');
+      var fullArgs = (targs.toLowerCase().indexOf('run')===0) ? targs : ('run' + (targs?(' ' + targs):''));
+      var wd = "";
+      try{ wd = fso.GetParentFolderName(exe); }catch(_){ wd = ""; }
+      try{
+        var cmd = 'cmd /c start "Teldrive"' + (wd?(' /D "' + wd + '"'):'') + ' "' + exe + '" ' + fullArgs;
+        sh.Run(cmd, 1, false);
+        if(teldriveTimer){ window.clearInterval(teldriveTimer); teldriveTimer=null; }
+        if(teldriveTailTimer){ window.clearInterval(teldriveTailTimer); teldriveTailTimer=null; }
+        if(teldriveStatusTimer) window.clearInterval(teldriveStatusTimer);
+        teldriveStatusTimer = window.setInterval(updateTdStatus, 1500);
+        setTdStatus(true, 0);
+        ensureShowTdLog();
+        appendLog('logTeldrive', 'Teldrive starting (terminal, no-browser)...');
+      }catch(e){ alert('Start failed: ' + e.message); }
+    }
+    function openLocalhost(){
+      try{
+        sh.Run('http://localhost:8080', 1, false);
+      }catch(e){ alert("Open failed: " + e.message); }
+    }
+
+    function saveToken(){
+      var conf = id("txtRcloneConf").value;
+      var remote = id("txtRemoteName").value;
+      var key = id("txtTokenKey").value;
+      var token = id("txtToken").value;
+      if(!conf || !fso.FileExists(conf)){ alert("Không tìm thấy rclone.conf: " + conf); return; }
+      if(!remote){ alert("Nhập remote name (vd: teldrive)"); return; }
+      if(!key){ alert("Nhập key (vd: token)"); return; }
+      if(!token){ alert("Nhập Access Token"); return; }
+      try{ var bak = conf + "." + (new Date().toISOString().replace(/[:T]/g,'-').slice(0,19)) + ".bak"; fso.CopyFile(conf, bak, true); }catch(e){}
+      var text = readAll(conf);
+      var lines = text.split(/\r?\n/);
+      var out=[], inSec=false, secFound=false, keyDone=false;
+      for(var i=0;i<lines.length;i++){
+        var line = lines[i];
+        var m = /^\s*\[(.+?)\]\s*$/.exec(line);
+        if(m){
+          if(inSec && !keyDone){ out.push(key + " = " + token); keyDone = true; }
+          inSec = (m[1].toLowerCase() === remote.toLowerCase());
+          if(inSec){ secFound = true; keyDone=false; }
+          out.push(line);
+          continue;
+        }
+        if(inSec){
+          var reKey = new RegExp("^\\s*" + escapeRegex(key) + "\\s*=.*$","i");
+          if(reKey.test(line)){
+            out.push(key + " = " + token);
+            keyDone = true;
+            continue;
+          }
+        }
+        out.push(line);
+      }
+      if(secFound){
+        if(inSec && !keyDone){ out.push(key + " = " + token); }
+        writeAll(conf, out.join("\r\n"));
+        log('Đã cập nhật ['+remote+'] ' + key + ' vào ' + conf);
+        alert('Đã cập nhật token cho remote ['+remote+']');
+      }else{
+        alert('Không thấy remote ['+remote+'] trong rclone.conf. Hãy tạo sẵn remote rồi thử lại.');
+      }
+    }
+
+    function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+    function readAll(path){ var ts = fso.OpenTextFile(path, 1, false); var t = ts.ReadAll(); ts.Close(); return t; }
+    function writeAll(path, content){ var ts = fso.OpenTextFile(path, 2, false); ts.Write(content); ts.Close(); }
+
+    function openRcloneConf(){
+      var p = id("txtRcloneConf").value;
+      if(!p){ alert("Chọn rclone.conf"); return; }
+      sh.Run('notepad.exe "' + p + '"', 1, false);
+    }
+
+    function openRcloneConfig(){
+      var rclone = id("txtRclonePath").value || "rclone";
+      var conf = id("txtRcloneConf").value;
+      sh.Run('cmd /c start "" "' + rclone + '" config --config "' + conf + '"', 0, false);
+    }
+
+    function addDriveRemote(){
+      var name = prompt("Tên remote Drive mới:", "pgs");
+      if(!name) return;
+      var rclone = id("txtRclonePath").value || "rclone";
+      var conf = id("txtRcloneConf").value;
+      sh.Run('cmd /c start "" "' + rclone + '" config create "' + name + '" drive --config "' + conf + '"', 0, false);
+    }
+
+    function runCopy(){
+      var rclone = id("txtRclonePath").value || "rclone";
+      var src = id("txtSrc").value;
+      var dst = id("txtDst").value;
+      if(!src || !dst){ alert("Điền nguồn và đích"); return; }
+      var conf = id("txtRcloneConf").value;
+      var val = validateRcloneConf();
+      if(!val.valid){
+        appendLog('logRclone', 'rclone.conf không hợp lệ. Lỗi: ' + val.errors.join(' | '));
+        alert('rclone.conf không hợp lệ. Hãy bấm "Sửa rclone.conf (repair)" rồi chạy lại.');
+        return;
+      }
+      var cmd = '"' + rclone + '" copy --config "' + conf + '" --update --ignore-existing ' + '"' + src + '" ' + '"' + dst + '" -v';
+      execWithLog(cmd);
+    }
+    function runCopyTerm(){
+      var rclone = id("txtRclonePath").value || "rclone";
+      var src = id("txtSrc").value;
+      var dst = id("txtDst").value;
+      if(!src || !dst){ alert("Điền nguồn và đích"); return; }
+      var conf = id("txtRcloneConf").value;
+      var val = validateRcloneConf();
+      if(!val.valid){
+        appendLog('logRclone', 'rclone.conf không hợp lệ. Lỗi: ' + val.errors.join(' | '));
+        alert('rclone.conf không hợp lệ. Hãy bấm "Sửa rclone.conf (repair)" rồi chạy lại.');
+        return;
+      }
+      var cmd = '"' + rclone + '" copy --config "' + conf + '" --update --ignore-existing ' + '"' + src + '" ' + '"' + dst + '" -v';
+      // Mở cửa sổ terminal mới để xem log trực tiếp. Để cửa sổ tự đóng sau khi xong (dùng cmd /c start)
+      try{
+        sh.Run('cmd /c start "Rclone Copy" ' + cmd, 1, false);
+        appendLog('logRclone', 'Đã mở terminal chạy: ' + cmd);
+      }catch(e){ alert('Start terminal failed: ' + e.message); }
+    }
+    function checkRclone(){
+      var rclone = id("txtRclonePath").value || "rclone";
+      var conf = id("txtRcloneConf").value;
+      var val = validateRcloneConf();
+      if(!val.valid){
+        appendLog('logRclone', 'rclone.conf không hợp lệ. Lỗi: ' + val.errors.join(' | '));
+        alert('rclone.conf không hợp lệ. Hãy bấm "Sửa rclone.conf (repair)" trước.');
+        return;
+      }
+      execWithLog('"' + rclone + '" version --config "' + conf + '"');
+    }
+
+    var execObj = null, timer = null;
+    var teldriveExec = null, teldriveTimer = null; // legacy, not used now
+    var teldrivePid = 0, teldriveLogPath = "", teldriveLogSnapshot = "", teldriveTailTimer = null, teldrivePidPath = "";
+    function execWithLog(cmd){
+      log('> ' + cmd);
+      try{
+        execObj = sh.Exec(cmd);
+        if(timer) window.clearInterval(timer);
+        timer = window.setInterval(pump, 150);
+      }catch(e){ alert('Exec failed: ' + e.message); }
+    }
+    function pump(){
+      try{
+        while(!execObj.StdOut.AtEndOfStream){ var line = execObj.StdOut.ReadLine(); log(line); }
+        while(!execObj.StdErr.AtEndOfStream){ var line2 = execObj.StdErr.ReadLine(); log(line2); }
+        if(execObj.Status == 1 || execObj.Status == 0){ window.clearInterval(timer); timer=null; log('Process finished.'); }
+      }catch(e){}
+    }
+    var teldriveLogSize=-1, teldriveStatusTimer=null;
+    var probeTimer=null, probeAttempts=0;
+    function isTeldriveRunning(){
+      try{
+        var svc = GetObject('winmgmts:');
+        var col = svc.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name='teldrive.exe'");
+        var e = new Enumerator(col);
+        return !e.atEnd();
+      }catch(e){ return false; }
+    }
+    function updateTdStatus(){
+      var running = isTeldriveRunning();
+      setTdStatus(running, 0);
+      if(!running){ if(teldriveStatusTimer){ window.clearInterval(teldriveStatusTimer); teldriveStatusTimer=null; } }
+    }
+    function startProbe(){
+      try{ if(probeTimer){ window.clearInterval(probeTimer); probeTimer=null; } }catch(e){}
+      probeAttempts = 0;
+      probeTimer = window.setInterval(probeTick, 1000);
+    }
+    function probeTick(){
+      try{
+        probeAttempts++;
+        var req = new ActiveXObject('WinHttp.WinHttpRequest.5.1');
+        req.SetTimeouts(1000,1000,1000,1000);
+        req.Open('GET', 'http://localhost:8080/', false);
+        req.SetRequestHeader('Cache-Control','no-cache');
+        req.Send();
+        var st = req.Status;
+        if(st > 0){ appendLog('logTeldrive', 'HTTP check: ' + st + ' OK'); window.clearInterval(probeTimer); probeTimer=null; return; }
+      }catch(e){ /* ignore */ }
+      if(probeAttempts >= 10){ appendLog('logTeldrive','HTTP check: không thể kết nối localhost:8080'); window.clearInterval(probeTimer); probeTimer=null; }
+    }
+    function tailTeldrive(){
+      try{
+        if(!teldriveLogPath || !fso.FileExists(teldriveLogPath)) return;
+        var file = fso.GetFile(teldriveLogPath);
+        if(teldriveLogSize == file.Size) return;
+        var content = readAll(teldriveLogPath);
+        // If the file grew too much, only take the last 50k chars to avoid freezing UI
+        var snapLen = teldriveLogSnapshot.length;
+        if(content.length - snapLen > 50000){
+          teldriveLogSnapshot = content.substring(content.length - 50000);
+          snapLen = 0; // force append entire snapshot slice below
+        }
+        if(content.length > snapLen){
+          var delta = content.substring(snapLen);
+          var lines = delta.split(/\r?\n/);
+          for(var i=0;i<lines.length;i++) if(lines[i].length) appendLog('logTeldrive', lines[i]);
+          teldriveLogSnapshot = content;
+        }
+        teldriveLogSize = file.Size;
+      }catch(e){}
+    }
+    function pumpTeldrive(){ /* not used when running via file tail */ }
+    function appendLog(targetId, msg){ var ta = id(targetId); if(!ta) return; ta.value += (msg + "\r\n"); if(ta.value.length > 200000){ ta.value = ta.value.slice(ta.value.length-150000); } ta.scrollTop = ta.scrollHeight; }
+    function log(msg){ appendLog('logRclone', msg); }
+    function setTdStatus(running, pid){ var el = id('tdStatus'); if(!el) return; el.className = running ? 'status running' : 'status'; el.innerHTML = '<span class="dot"></span>' + (running ? ('Đang chạy' + (pid?(' (PID '+pid+')'):'') ) : 'Đã dừng'); }
+    function ensureShowTdLog(){ try{ id('logTeldrive').scrollIntoView(true); }catch(e){} }
+    function openTdLog(){ if(!teldriveLogPath || !fso.FileExists(teldriveLogPath)){ alert('Chưa có log hoặc file log chưa được tạo.'); return; } sh.Run('notepad.exe "' + teldriveLogPath + '"', 1, false); }
+    function openLogFolder(){ var p = teldriveLogPath && teldriveLogPath.length ? teldriveLogPath : (gAppDir? (gAppDir + '\\teldrive.log') : ''); var folder = p ? fso.GetParentFolderName(p) : gAppDir; if(folder) sh.Run('explorer.exe "' + folder + '"', 1, false); }
+    function repairRcloneConf(){
+      var conf = id('txtRcloneConf').value;
+      if(!conf || !fso.FileExists(conf)){ alert('Không tìm thấy rclone.conf'); return; }
+      try{
+        // backup
+        try{ var bak = conf + ".repair-" + (new Date().toISOString().replace(/[:T]/g,'-').slice(0,19)) + ".bak"; fso.CopyFile(conf, bak, true); }catch(_){ }
+        var text = readAll(conf);
+        // strip UTF-8 BOM if present
+        text = text.replace(/^\uFEFF/, '');
+        var lines = text.split(/\r?\n/);
+        var out=[];
+        var secRe = /^\s*\[(.+?)\]\s*$/;
+        var kvRe  = /^\s*([A-Za-z0-9_\-]+)\s*=\s*(.*?)\s*$/;
+        for(var i=0;i<lines.length;i++){
+          var L = lines[i];
+          var T = L.replace(/^\uFEFF/, '');
+          // drop lines that are only quotes or malformed
+          if(/^\s*"{2,}\s*,?\s*$/.test(T)) continue;
+          if(/^\s*[#;].*$/.test(T)) { out.push(T); continue; } // keep comments
+          if(secRe.test(T)) { out.push(T); continue; }
+          var m = kvRe.exec(T);
+          if(m){ out.push(m[1] + ' = ' + m[2]); continue; }
+          if(/^\s*$/.test(T)) { out.push(''); continue; }
+          // otherwise skip invalid line
+        }
+        // ensure trailing newline
+        var repaired = out.join("\r\n");
+        writeAll(conf, repaired);
+        appendLog('logRclone', 'Đã repair rclone.conf (đã loại bỏ dòng không hợp lệ, chuẩn hóa key=value).');
+      }catch(e){ alert('Repair thất bại: ' + e.message); }
+    }
+    function rebuildTeldrive(){
+      var conf = id('txtRcloneConf').value;
+      var token = id('txtToken').value;
+      if(!conf || !fso.FileExists(conf)){ alert('Không tìm thấy rclone.conf'); return; }
+      if(!token){ alert('Nhập Access Token trước'); return; }
+      try{
+        var text = readAll(conf).replace(/^\uFEFF/, '');
+        var lines = text.split(/\r?\n/);
+        var out=[], inTd=false;
+        for(var i=0;i<lines.length;i++){
+          var L = lines[i];
+          var m = /^\s*\[(.+?)\]\s*$/.exec(L);
+          if(m){
+            if(inTd){ inTd = false; }
+            if(m[1].toLowerCase() === 'teldrive'){ inTd = true; continue; }
+            out.push(L);
+            continue;
+          }
+          if(inTd){ continue; }
+          out.push(L);
+        }
+        // append new [teldrive] section
+        if(out.length && out[out.length-1] !== '') out.push('');
+        out.push('[teldrive]');
+        out.push('type = teldrive');
+        out.push('api_host = http://localhost:8080');
+        out.push('access_token = ' + token);
+        out.push('chunk_size = 1G');
+        out.push('upload_concurrency = 4');
+        out.push('encrypt_files = false');
+        out.push('random_chunk_name = true');
+        writeAll(conf, out.join('\r\n'));
+        appendLog('logRclone', 'Đã tạo lại section [teldrive] với token mới.');
+      }catch(e){ alert('Rebuild thất bại: ' + e.message); }
+    }
+    function validateRcloneConf(){
+      var conf = id('txtRcloneConf').value;
+      var res = { valid:true, errors:[] };
+      try{
+        if(!conf || !fso.FileExists(conf)){ res.valid=false; res.errors.push('Không tìm thấy rclone.conf'); return res; }
+        var text = readAll(conf).replace(/^\uFEFF/, '');
+        var lines = text.split(/\r?\n/);
+        var secRe = /^\s*\[(.+?)\]\s*$/;
+        var kvRe  = /^\s*([A-Za-z0-9_\-]+)\s*=\s*(.*?)\s*$/;
+        for(var i=0;i<lines.length;i++){
+          var T = lines[i].replace(/^\uFEFF/, '');
+          if(/^\s*$/.test(T)) continue;
+          if(/^\s*[#;].*$/.test(T)) continue;
+          if(secRe.test(T)) continue;
+          if(kvRe.test(T)) continue;
+          res.valid=false; res.errors.push('Line ' + (i+1) + ': "' + T + '"');
+          if(res.errors.length>=5) break;
+        }
+      }catch(e){ res.valid=false; res.errors.push('Validate lỗi: ' + e.message); }
+      return res;
+    }
+    function killRcloneAll(){
+      try{ sh.Run('cmd /c taskkill /IM rclone.exe /F', 0, true); }catch(e){}
+      try{ sh.Run('cmd /c taskkill /FI "WINDOWTITLE eq Rclone Copy" /T /F', 0, false); }catch(e){}
+      appendLog('logRclone', 'Đã dừng rclone (nếu đang chạy).');
+    }
+    function stopAllAndExit(){
+      try{ stopTeldrive(); }catch(e){}
+      try{ killRcloneAll(); }catch(e){}
+      try{
+        if(teldriveStatusTimer){ window.clearInterval(teldriveStatusTimer); teldriveStatusTimer=null; }
+        if(teldriveTailTimer){ window.clearInterval(teldriveTailTimer); teldriveTailTimer=null; }
+        if(timer){ window.clearInterval(timer); timer=null; }
+      }catch(e){}
+      window.setTimeout(function(){ try{ window.close(); }catch(e){} }, 300);
+    }
+  </script>
+</head>
+<body onload="bootstrap()">
+  <div class="main">
+  <h2 class="app-title">Rclone Manager</h2>
+
+  <div class="group">
+    <h3>1) Teldrive</h3>
+    <div id="tdStatus" class="status"><span class="dot"></span>Đã dừng</div>
+    <label>Đường dẫn teldrive.exe</label>
+    <div class="row">
+      <div><input id="txtTeldriveExe" type="text" placeholder="C:\\path\\to\\teldrive.exe" /></div>
+      <div><button onclick="browseFileFor('txtTeldriveExe')">Browse</button></div>
+    </div>
+    <label>Tham số (nếu cần)</label>
+    <input id="txtTeldriveArgs" type="text" placeholder="" />
+    <div class="btn-row">
+      <button class="primary" onclick="startTeldrive()">Start Teldrive + mở http://localhost:8080</button>
+      <button onclick="startTeldriveNoBrowser()">Start Teldrive (không mở browser)</button>
+      <button onclick="stopTeldrive()">Stop Teldrive</button>
+      <button onclick="openLocalhost()">Mở localhost:8080</button>
+      <button onclick="startProbe()">Kiểm tra Teldrive</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <h3>2) Access Token -> rclone.conf</h3>
+    <label>rclone.conf (mặc định)</label>
+    <div class="row">
+      <div><input id="txtRcloneConf" type="text" /></div>
+      <div><button onclick="browseFileFor('txtRcloneConf')">Browse</button></div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Remote name</label>
+        <input id="txtRemoteName" type="text" />
+      </div>
+      <div>
+        <label>Key cần cập nhật</label>
+        <input id="txtTokenKey" type="text" />
+      </div>
+    </div>
+    <label>Access Token</label>
+    <input id="txtToken" type="text" placeholder="Dán token tại đây" />
+    <div class="btn-row">
+      <button class="primary" onclick="saveToken()">Lưu token vào rclone.conf</button>
+      <button onclick="openRcloneConf()">Xem rclone.conf</button>
+      <button onclick="openRcloneConfig()">Mở rclone config</button>
+      <button onclick="addDriveRemote()">Thêm remote Drive</button>
+      <button onclick="repairRcloneConf()">Sửa rclone.conf (repair)</button>
+      <button onclick="rebuildTeldrive()">Tạo lại [teldrive]</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <h3>3) rclone copy</h3>
+    <label>rclone.exe (để trống nếu đã có trong PATH)</label>
+    <input id="txtRclonePath" type="text" placeholder="rclone" />
+    <div class="row">
+      <div>
+        <label>Nguồn</label>
+        <input id="txtSrc" type="text" />
+      </div>
+      <div>
+        <label>Đích</label>
+        <input id="txtDst" type="text" />
+      </div>
+    </div>
+    <div class="btn-row">
+      <button onclick="checkRclone()">Kiểm tra rclone</button>
+      <button class="primary" onclick="runCopyTerm()">Chạy copy (terminal)</button>
+    </div>
+  </div>
+
+  <div class="group">
+    <h3>Log - Teldrive</h3>
+    <div class="btn-row">
+      <button onclick="openTdLog()">Mở file log</button>
+      <button onclick="openLogFolder()">Mở thư mục log</button>
+    </div>
+    <textarea id="logTeldrive" readonly></textarea>
+  </div>
+  <div class="group">
+    <h3>Log - rclone</h3>
+    <textarea id="logRclone" readonly></textarea>
+  </div>
+  <div class="group">
+    <h3>Thoát</h3>
+    <div class="btn-row">
+      <button class="primary" onclick="stopAllAndExit()">Dừng Teldrive + Rclone và thoát</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
