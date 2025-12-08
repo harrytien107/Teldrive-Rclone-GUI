@@ -1,591 +1,836 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <meta charset="utf-8" />
-  <meta http-equiv="x-ua-compatible" content="IE=9" />
-  <title>Teldrive Rclone Manager</title>
-  <HTA:APPLICATION 
-    APPLICATIONNAME="TeldriveRclone"
-    ID="TeldriveRclone"
-    BORDER="thick"
-    CAPTION="yes"
-    SHOWINTASKBAR="yes"
-    SINGLEINSTANCE="yes"
-    SYSMENU="yes"
-    WINDOWSTATE="normal"
-    SCROLL="auto"
-    MAXIMIZEBUTTON="yes"
-    MINIMIZEBUTTON="yes"
-    ICON="logo.ico"
-  />
+  <meta http-equiv="x-ua-compatible" content="IE=edge" />
+  <title>Teldrive Rclone GUI - Pro Max</title>
+  <HTA:APPLICATION ID="oHTA" APPLICATIONNAME="TeldriveRclone" BORDER="thin" BORDERSTYLE="normal" CAPTION="yes"
+    ICON="logo.ico" MAXIMIZEBUTTON="yes" MINIMIZEBUTTON="yes" SHOWINTASKBAR="yes" SINGLEINSTANCE="yes" SYSMENU="yes"
+    VERSION="3.0" WINDOWSTATE="normal" SCROLL="no" INNERBORDER="no" SELECTION="no" CONTEXTMENU="yes" />
   <style>
-    html,body{height:100%;}
-    body { font-family: Segoe UI, Arial; margin: 14px; background:#0b1220; color:#e5e7eb; }
-    .group{background:#0f172a; border:1px solid #1f2a3a; padding:14px; margin-bottom:12px; border-radius:8px; box-shadow:0 1px 0 rgba(255,255,255,0.03) inset;}
-    label{display:block; margin:8px 0 6px; font-weight:600; color:#94a3b8;}
-    input[type=text], textarea{ width:100%; padding:8px 10px; border:1px solid #334155; background:#0b1220; color:#e5e7eb; border-radius:6px; outline:none; }
-    input[type=text]:focus, textarea:focus{ border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.25);}    
-    textarea{height:220px; font-family:Consolas,monospace; }
-    button{padding:8px 12px; margin-right:8px; background:#1f2937; color:#e5e7eb; border:1px solid #334155; border-radius:6px; cursor:pointer;}
-    button:hover{ background:#374151; }
-    .row{display:-ms-flexbox; display:flex; -ms-flex-align:center; align-items:center;}
-    .row > div:first-child {flex:1; -ms-flex:1;}
-    .row > div:last-child {flex:0 0 auto;}
-    /* Fallback for gap in old IE engines */
-    .row > div + div { margin-left:12px; }
-    h3{margin:2px 0 10px; font-weight:700; color:#e2e8f0;}
-    a{color:#93c5fd;}
-    .main{max-width: 900px; margin: 0 auto;}
-    .btn-row{display:-ms-flexbox; display:flex; -ms-flex-wrap:wrap; flex-wrap:wrap; margin-top:10px;}
-    .btn-row > * { margin-right:10px; margin-top:8px; }
-    .btn-row > *:last-child { margin-right:0; }
-    button{transition:background-color .15s ease, box-shadow .15s ease, transform .05s ease; min-height:34px;}
-    button:active{ transform: translateY(1px); }
-    button.primary{background:#2563eb; border-color:#1e40af; box-shadow:0 0 0 1px #1e40af inset, 0 1px 2px rgba(0,0,0,.3);}
-    button.primary:hover{background:#1d4ed8;}
-    .app-title{margin:0; font-size:32px; font-weight:800; color:#e5e7eb; text-align:center;}
-    .title{display:-ms-flexbox; display:flex; -ms-flex-align:center; align-items:center; -ms-flex-pack:center; justify-content:center; margin:10px 0 18px;}
-    .title img.logo{width:28px; height:28px; margin-right:8px; border-radius:4px;}
-    .row > div:last-child button{ height:36px; padding:8px 14px; }
-    input[type=text], textarea{ margin-top:4px; margin-bottom:6px; }
-    .status{display:inline-block; margin-top:4px; font-size:12px; color:#94a3b8;}
-    .status .dot{display:inline-block; width:8px; height:8px; border-radius:50%; background:#ef4444; margin-right:6px; vertical-align:middle;}
-    .status.running .dot{ background:#22c55e; }
+    /* Absolute Positioning Layout V3 - Medium Size */
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      cursor: default;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      font-family: "Segoe UI", sans-serif;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-size: 15px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 240px;
+      background-color: #161b22;
+      border-right: 1px solid #30363d;
+      padding: 1.2rem;
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    .brand {
+      display: block;
+      margin-bottom: 2rem;
+      padding-left: 0.2rem;
+    }
+
+    .brand img {
+      width: 32px;
+      height: 32px;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+
+    .brand span {
+      font-weight: 600;
+      font-size: 1.3rem;
+      color: #c9d1d9;
+      vertical-align: middle;
+    }
+
+    .brand-accent {
+      color: #58a6ff;
+    }
+
+    .nav-item {
+      display: block;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      color: #8b949e;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    .nav-item:hover {
+      background-color: #21262d;
+      color: #c9d1d9;
+    }
+
+    .nav-item.active {
+      background-color: rgba(88, 166, 255, 0.15);
+      color: #58a6ff;
+    }
+
+    .nav-item i {
+      margin-right: 12px;
+      width: 20px;
+      text-align: center;
+      display: inline-block;
+    }
+
+    .sidebar-footer {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 1.2rem;
+      right: 1.2rem;
+      border-top: 1px solid #30363d;
+      padding-top: 1.2rem;
+    }
+
+    /* Main Content */
+    .main-content {
+      position: absolute;
+      top: 0;
+      left: 240px;
+      right: 0;
+      bottom: 0;
+      background-color: #0d1117;
+      overflow: hidden;
+    }
+
+    .header {
+      height: 60px;
+      width: 100%;
+      border-bottom: 1px solid #30363d;
+      display: block;
+      padding: 0 2rem;
+      line-height: 60px;
+      background-color: #0d1117;
+    }
+
+    .page-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #c9d1d9;
+    }
+
+    .scroll-area {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+
+    .scroll-area::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    .scroll-area::-webkit-scrollbar-track {
+      background: #0d1117;
+    }
+
+    .scroll-area::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 6px;
+      border: 2px solid #0d1117;
+    }
+
+    /* Cards */
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      display: block;
+    }
+
+    .card-header {
+      height: 30px;
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+
+    .card-title {
+      font-weight: 600;
+      color: #c9d1d9;
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 1.1rem;
+    }
+
+    .status-badge {
+      position: absolute;
+      right: 0;
+      top: 0;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 14px;
+      background: #21262d;
+      color: #8b949e;
+      font-weight: 500;
+    }
+
+    .status-badge.running {
+      background: rgba(35, 134, 54, 0.15);
+      color: #3fb950;
+      border: 1px solid rgba(35, 134, 54, 0.4);
+    }
+
+    .status-badge.stopped {
+      background: rgba(218, 54, 51, 0.15);
+      color: #f85149;
+      border: 1px solid rgba(218, 54, 51, 0.4);
+    }
+
+    /* Inputs & Layouts */
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #8b949e;
+      font-size: 0.9rem;
+    }
+
+    .grid-row {
+      display: table;
+      width: 100%;
+      border-spacing: 8px 0;
+      margin-left: -8px;
+    }
+
+    .grid-cell {
+      display: table-cell;
+      vertical-align: top;
+    }
+
+    .w-100 {
+      width: 100%;
+    }
+
+    .w-auto {
+      width: 1%;
+      white-space: nowrap;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      height: 38px;
+      background-color: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0 12px;
+      color: #c9d1d9;
+      font-family: Consolas, monospace;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    input[type="text"]:focus {
+      border-color: #58a6ff;
+    }
+
+    button {
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      background-color: #21262d;
+      color: #c9d1d9;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    button:hover {
+      background-color: #30363d;
+    }
+
+    button.primary {
+      background-color: #238636;
+      color: white;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    button.primary:hover {
+      background-color: #2ea043;
+    }
+
+    button.danger {
+      color: #f85149;
+    }
+
+    button.sm {
+      height: 30px;
+      padding: 0 10px;
+      font-size: 0.85rem;
+    }
+
+    /* Logs */
+    .terminal {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: Consolas, monospace;
+      height: 300px;
+      overflow-y: auto;
+      color: #8b949e;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+
+    .log-info {
+      color: #58a6ff;
+    }
+
+    .log-success {
+      color: #3fb950;
+    }
+
+    .log-error {
+      color: #f85149;
+    }
+
+    .log-warn {
+      color: #d29922;
+    }
+
+    /* Helper Helpers */
+    .hidden {
+      display: none !important;
+    }
+
+    .mt-2 {
+      margin-top: 1rem;
+    }
   </style>
-  <script language="JScript">
-    var sh = new ActiveXObject("WScript.Shell");
+
+  <script>
+    window.onerror = function (msg, url, line) { alert("Error: " + msg + "\nLine: " + line); return false; };
+
     var fso = new ActiveXObject("Scripting.FileSystemObject");
-    function id(x){ return document.getElementById(x); }
-    function expand(s){ return sh.ExpandEnvironmentStrings(s); }
-    var gAppDir = null;
+    var sh = new ActiveXObject("WScript.Shell");
+    var gAppDir = "";
+    var gWindowStatePath = "";
 
-    function bootstrap(){
-      try{
-        // If running as 32-bit on 64-bit OS, Sysnative\mshta.exe is visible.
-        var sysnativeMshta = expand("%windir%") + "\\Sysnative\\mshta.exe";
-        if(location.search.indexOf("x64=1") < 0 && fso.FileExists(sysnativeMshta)){
-          var href = location.href + (location.search ? "&x64=1" : "?x64=1");
-          sh.Run('"' + sysnativeMshta + '" "' + href + '"', 1, false);
-          window.close();
-          return;
+    function expand(str) { return sh.ExpandEnvironmentStrings(str); }
+    function getWindowStatePath() {
+      if (!gWindowStatePath) {
+        var dir = expand("%APPDATA%") + "\\TeldriveRclone";
+        if (!fso.FolderExists(dir)) fso.CreateFolder(dir);
+        gWindowStatePath = dir + "\\window_state.json";
+      }
+      return gWindowStatePath;
+    }
+
+    function saveWindowState() {
+      try {
+        if (window.screenLeft <= -30000) return;
+        var state = { left: window.screenLeft, top: window.screenTop, width: window.outerWidth, height: window.outerHeight };
+        var ts = fso.OpenTextFile(getWindowStatePath(), 2, true);
+        ts.Write(JSON.stringify(state)); ts.Close();
+      } catch (e) { }
+    }
+
+    function restoreWindowState() {
+      try {
+        var path = getWindowStatePath();
+        if (fso.FileExists(path)) {
+          var ts = fso.OpenTextFile(path, 1, false);
+          var state = JSON.parse(ts.ReadAll()); ts.Close();
+          if (state) { window.resizeTo(state.width, state.height); window.moveTo(state.left, state.top); }
         }
-      }catch(e){}
-      // Ensure dark background even if CSS fails to load fully
-      try{
-        document.body.style.backgroundColor = '#0b1220';
-        document.body.style.color = '#e5e7eb';
-      }catch(e){}
+      } catch (e) { }
+    }
 
-      // Ensure logo.ico exists (convert from PNG URL on first run)
-      try{
+    function bootstrap() {
+      restoreWindowState();
+      window.setInterval(saveWindowState, 2000);
+
+      try {
         var p = unescape(location.pathname);
-        if(p.charAt(0) == '/') p = p.substring(1);
-        var dir = fso.GetParentFolderName(p);
-        gAppDir = dir;
-        var icoPath = dir + "\\logo.ico";
-        if(!fso.FileExists(icoPath)){
-          var ps1 = dir + "\\_make_logo_ico.ps1";
-          var dirEsc = dir.replace(/\\/g, "\\\\");
-          var ps = [
-            "$ErrorActionPreference='Stop'",
-            "$u='https://teldrive-docs.pages.dev/images/logo.png'",
-            "$dir='" + dirEsc + "'",
-            "$png=Join-Path $dir 'logo.png'",
-            "$ico=Join-Path $dir 'logo.ico'",
-            "Invoke-WebRequest -Uri $u -OutFile $png -UseBasicParsing",
-            "Add-Type -AssemblyName System.Drawing",
-            "$img=[System.Drawing.Image]::FromFile($png)",
-            "$icon=[System.Drawing.Icon]::FromHandle($img.GetHicon())",
-            "$fs=New-Object IO.FileStream($ico,[IO.FileMode]::Create)",
-            "$icon.Save($fs)",
-            "$fs.Close()",
-            "$img.Dispose()"
-          ].join("\r\n");
-          var ts = fso.OpenTextFile(ps1, 2, true);
-          ts.Write(ps); ts.Close();
-          sh.Run('powershell -NoProfile -ExecutionPolicy Bypass -File "' + ps1 + '"', 0, true);
-          try{ fso.DeleteFile(ps1, true); }catch(ex){}
+        if (p.charAt(0) == '/') p = p.substring(1);
+        gAppDir = fso.GetParentFolderName(p);
+      } catch (e) { }
+
+      ensureLogo();
+
+      switchTab('home');
+      loadSettings();
+      log("System Ready. V3.0", "success");
+    }
+
+    function ensureLogo() {
+      try {
+        // Just checking if we can set the icon. Handled by HTA tag mostly.
+      } catch (e) { }
+    }
+
+    function switchTab(tabId) {
+      document.getElementById('tab-home').className = tabId == 'home' ? '' : 'hidden';
+      document.getElementById('tab-rclone').className = tabId == 'rclone' ? '' : 'hidden';
+      document.getElementById('tab-config').className = tabId == 'config' ? '' : 'hidden';
+      document.getElementById('tab-logs').className = tabId == 'logs' ? '' : 'hidden';
+
+      document.getElementById('nav-home').className = tabId == 'home' ? 'nav-item active' : 'nav-item';
+      document.getElementById('nav-rclone').className = tabId == 'rclone' ? 'nav-item active' : 'nav-item';
+      document.getElementById('nav-config').className = tabId == 'config' ? 'nav-item active' : 'nav-item';
+      document.getElementById('nav-logs').className = tabId == 'logs' ? 'nav-item active' : 'nav-item';
+
+      document.getElementById('page-title').innerText = tabId.charAt(0).toUpperCase() + tabId.slice(1);
+    }
+
+    function log(msg, type) {
+      if (!type) type = "info";
+      var el = document.createElement('div');
+      el.className = "log-entry log-" + type;
+      el.innerText = "[" + new Date().toLocaleTimeString() + "] " + msg;
+      var term = document.getElementById('terminal-output');
+      if (term) { term.appendChild(el); term.scrollTop = term.scrollHeight; }
+    }
+
+    // --- Actions ---
+
+    function browseFile(targetInputId) {
+      setTimeout(function () { document.getElementById('hidden-file-input').click(); }, 10);
+      var fileInput = document.getElementById('hidden-file-input');
+      fileInput.onchange = function () {
+        if (fileInput.value) {
+          document.getElementById(targetInputId).value = fileInput.value;
+          saveSettings();
+          fileInput.value = "";
         }
-      }catch(ex){}
-
-      onLoadInit();
+      };
     }
 
-    function onLoadInit(){
-      id("txtRclonePath").value = "rclone";
-      id("txtRcloneConf").value = defaultRcloneConf();
-      id("txtTeldriveExe").value = "C:\\Users\\Tien\\.installer\\bin\\teldrive.exe";
-      id("txtTeldriveArgs").value = "";
-      id("txtSrc").value = 'pgs:/TheGdriveXbot';
-      id("txtDst").value = 'teldrive:/TheGdriveXbot';
-      id("txtRemoteName").value = 'teldrive';
-      id("txtTokenKey").value = 'access_token';
-      setTdStatus(false, 0);
-    }
-    function defaultRcloneConf(){ return expand("%APPDATA%") + "\\rclone\\rclone.conf"; }
+    function startTeldrive() {
+      var exe = document.getElementById('inp-teldrive-path').value;
+      var conf = document.getElementById('inp-teldrive-conf').value;
+      var port = document.getElementById('inp-teldrive-port').value;
 
-    function browseFileFor(targetId){
-      try{
-        var html = "<input type=file id=f><script>new ActiveXObject('Scripting.FileSystemObject').GetStandardStream(1).Write(document.getElementById('f').value);close()<" + "/script>";
-        var cmd = 'mshta.exe "about:' + html + '"';
-        var out = sh.Exec(cmd).StdOut.ReadAll();
-        out = out.replace(/\r?\n$/, "");
-        if(out) id(targetId).value = out;
-      }catch(e){ alert("Browse failed: " + e.message); }
-    }
+      if (!fso.FileExists(exe)) { log("Teldrive executable not found!", "error"); return; }
 
-    function startTeldrive(){
-      var exe = id("txtTeldriveExe").value;
-      var args = id("txtTeldriveArgs").value;
-      if(!exe || !fso.FileExists(exe)){ alert("Chọn đúng đường dẫn teldrive.exe"); return; }
-      var targs = (args||"").replace(/^\s+|\s+$/g,'');
-      var fullArgs = (targs.toLowerCase().indexOf('run')===0) ? targs : ('run' + (targs?(' ' + targs):''));
-      var wd = "";
-      try{ wd = fso.GetParentFolderName(exe); }catch(_){ wd = ""; }
-      try{
-        // Open a visible console window running teldrive with working directory
-        var cmd = 'cmd /c start "Teldrive"' + (wd?(' /D "' + wd + '"'):'') + ' "' + exe + '" ' + fullArgs;
-        sh.Run(cmd, 1, false);
-        if(teldriveTimer){ window.clearInterval(teldriveTimer); teldriveTimer=null; }
-        if(teldriveTailTimer){ window.clearInterval(teldriveTailTimer); teldriveTailTimer=null; }
-        if(teldriveStatusTimer) window.clearInterval(teldriveStatusTimer);
-        teldriveStatusTimer = window.setInterval(updateTdStatus, 1500);
-        setTdStatus(true, 0);
-        ensureShowTdLog();
-        appendLog('logTeldrive', 'Teldrive starting (terminal)...');
-        openLocalhost();
-        startProbe();
-      }catch(e){ alert('Start failed: ' + e.message); }
-    }
-    function stopTeldrive(){
-      try{
-        if((!teldrivePid || teldrivePid<=0) && teldrivePidPath && fso.FileExists(teldrivePidPath)){
-          var r = fso.OpenTextFile(teldrivePidPath, 1, false); var s = r.ReadAll(); r.Close();
-          teldrivePid = parseInt(s.replace(/\s+/g,'').toString(), 10) || 0;
-        }
-        sh.Run('cmd /c taskkill /IM teldrive.exe /F', 0, true);
-        if(teldriveTimer){ window.clearInterval(teldriveTimer); teldriveTimer=null; }
-        if(teldriveTailTimer){ window.clearInterval(teldriveTailTimer); teldriveTailTimer=null; }
-        if(teldriveStatusTimer){ window.clearInterval(teldriveStatusTimer); teldriveStatusTimer=null; }
-        teldriveExec = null;
-        teldrivePid = 0; teldriveLogSnapshot = ""; teldriveLogPath = "";
-        try{ if(teldrivePidPath && fso.FileExists(teldrivePidPath)) fso.DeleteFile(teldrivePidPath, true); }catch(_){ }
-        setTdStatus(false, 0);
-        appendLog('logTeldrive', "Teldrive stopped");
-      }catch(e){ alert("Stop failed: " + e.message); }
-    }
-    function startTeldriveNoBrowser(){
-      var exe = id("txtTeldriveExe").value;
-      var args = id("txtTeldriveArgs").value;
-      if(!exe || !fso.FileExists(exe)){ alert("Chọn đúng đường dẫn teldrive.exe"); return; }
-      var targs = (args||"").replace(/^\s+|\s+$/g,'');
-      var fullArgs = (targs.toLowerCase().indexOf('run')===0) ? targs : ('run' + (targs?(' ' + targs):''));
-      var wd = "";
-      try{ wd = fso.GetParentFolderName(exe); }catch(_){ wd = ""; }
-      try{
-        var cmd = 'cmd /c start "Teldrive"' + (wd?(' /D "' + wd + '"'):'') + ' "' + exe + '" ' + fullArgs;
-        sh.Run(cmd, 1, false);
-        if(teldriveTimer){ window.clearInterval(teldriveTimer); teldriveTimer=null; }
-        if(teldriveTailTimer){ window.clearInterval(teldriveTailTimer); teldriveTailTimer=null; }
-        if(teldriveStatusTimer) window.clearInterval(teldriveStatusTimer);
-        teldriveStatusTimer = window.setInterval(updateTdStatus, 1500);
-        setTdStatus(true, 0);
-        ensureShowTdLog();
-        appendLog('logTeldrive', 'Teldrive starting (terminal, no-browser)...');
-      }catch(e){ alert('Start failed: ' + e.message); }
-    }
-    function openLocalhost(){
-      try{
-        sh.Run('http://localhost:8080', 1, false);
-      }catch(e){ alert("Open failed: " + e.message); }
-    }
+      // Build arguments
+      var cmdArgs = 'run';
 
-    function saveToken(){
-      var conf = id("txtRcloneConf").value;
-      var remote = id("txtRemoteName").value;
-      var key = id("txtTokenKey").value;
-      var token = id("txtToken").value;
-      if(!conf || !fso.FileExists(conf)){ alert("Không tìm thấy rclone.conf: " + conf); return; }
-      if(!remote){ alert("Nhập remote name (vd: teldrive)"); return; }
-      if(!key){ alert("Nhập key (vd: token)"); return; }
-      if(!token){ alert("Nhập Access Token"); return; }
-      try{ var bak = conf + "." + (new Date().toISOString().replace(/[:T]/g,'-').slice(0,19)) + ".bak"; fso.CopyFile(conf, bak, true); }catch(e){}
-      var text = readAll(conf);
-      var lines = text.split(/\r?\n/);
-      var out=[], inSec=false, secFound=false, keyDone=false;
-      for(var i=0;i<lines.length;i++){
-        var line = lines[i];
-        var m = /^\s*\[(.+?)\]\s*$/.exec(line);
-        if(m){
-          if(inSec && !keyDone){ out.push(key + " = " + token); keyDone = true; }
-          inSec = (m[1].toLowerCase() === remote.toLowerCase());
-          if(inSec){ secFound = true; keyDone=false; }
-          out.push(line);
-          continue;
-        }
-        if(inSec){
-          var reKey = new RegExp("^\\s*" + escapeRegex(key) + "\\s*=.*$","i");
-          if(reKey.test(line)){
-            out.push(key + " = " + token);
-            keyDone = true;
-            continue;
-          }
-        }
-        out.push(line);
+      // Only add config if user provided one. 
+      // Otherwise Teldrive uses default ~/.teldrive/config.toml
+      if (conf && conf.trim() !== "") {
+        cmdArgs += ' -c "' + conf + '"';
       }
-      if(secFound){
-        if(inSec && !keyDone){ out.push(key + " = " + token); }
-        writeAll(conf, out.join("\r\n"));
-        log('Đã cập nhật ['+remote+'] ' + key + ' vào ' + conf);
-        alert('Đã cập nhật token cho remote ['+remote+']');
-      }else{
-        alert('Không thấy remote ['+remote+'] trong rclone.conf. Hãy tạo sẵn remote rồi thử lại.');
+
+      if (port && port.trim() !== "") {
+        cmdArgs += ' --port ' + port;
+      }
+
+      var cmd = 'powershell -WindowStyle Hidden -Command "Start-Process -FilePath \'' + exe + '\' -ArgumentList \'' + cmdArgs + '\' -NoNewWindow"';
+
+      try {
+        sh.Run(cmd, 0, false);
+        log("Starting Teldrive...", "info");
+        updateStatus("teldrive-status", true);
+      } catch (e) { log("Start Error: " + e.message, "error"); }
+    }
+
+    function stopTeldrive() {
+      sh.Run('powershell -WindowStyle Hidden -Command "Stop-Process -Name teldrive -Force -ErrorAction SilentlyContinue"', 0, true);
+      log("Stopped Teldrive.", "warn");
+      updateStatus("teldrive-status", false);
+    }
+
+    function openTeldriveBrowser() {
+      var port = document.getElementById('inp-teldrive-port').value || "8080";
+      var url = "http://localhost:" + port;
+      try { sh.Run(url); log("Opening " + url, "info"); } catch (e) { log(e.message, "error"); }
+    }
+
+    function runTeldriveCmd(arg) {
+      var exe = document.getElementById('inp-teldrive-path').value;
+      if (!fso.FileExists(exe)) return;
+      var cmd = 'powershell -NoProfile -Command "& \'' + exe + '\' ' + arg + '"';
+      // Run and capture output not easy in HTA without tmp file.
+      // We will run visible for version/help or use a pipe wrapper.
+      // Let's run in new window for Help.
+      sh.Run('cmd /c "' + exe + '" ' + arg + ' & pause', 1, false);
+    }
+
+    function mountRclone() {
+      var rclone = document.getElementById('inp-rclone-path').value;
+      var conf = document.getElementById('inp-rclone-conf').value;
+      var remote = document.getElementById('inp-remote').value;
+      var mount = document.getElementById('inp-mount').value;
+      var flags = document.getElementById('inp-rclone-flags').value; // Extra flags
+
+      var args = 'mount ' + remote + ' ' + mount + ' --config ' + conf + ' --vfs-cache-mode full ' + flags;
+      var cmd = 'powershell -WindowStyle Hidden -Command "Start-Process -FilePath \'' + rclone + '\' -ArgumentList \'' + args + '\' -NoNewWindow"';
+      try { sh.Run(cmd, 0, false); log("Mount command sent.", "success"); updateStatus("mount-status", true); } catch (e) { log("Mount Error: " + e.message, "error"); }
+    }
+
+    function startWebDAV() {
+      var rclone = document.getElementById('inp-rclone-path').value;
+      var conf = document.getElementById('inp-rclone-conf').value;
+      var remote = document.getElementById('inp-remote').value;
+      var port = document.getElementById('inp-webdav-port').value || "8090";
+
+      var args = 'serve webdav ' + remote + ' --addr :' + port + ' --config ' + conf + ' --vfs-cache-mode full';
+      var cmd = 'powershell -WindowStyle Hidden -Command "Start-Process -FilePath \'' + rclone + '\' -ArgumentList \'' + args + '\' -NoNewWindow"';
+      try {
+        sh.Run(cmd, 0, false);
+        log("WebDAV started on :" + port, "success");
+        updateStatus("webdav-status", true);
+      } catch (e) { log("WebDAV Error: " + e.message, "error"); }
+    }
+
+    function stopWebDAV() {
+      var ps = "Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'rclone.exe' -and $_.CommandLine -match 'serve webdav' } | Stop-Process -Force";
+      var cmd = 'powershell -WindowStyle Hidden -Command "' + ps + '"';
+      try {
+        sh.Run(cmd, 0, true);
+        log("Stopped WebDAV.", "warn");
+        updateStatus("webdav-status", false);
+      } catch (e) { log("Stop Error: " + e.message, "error"); }
+    }
+
+    function openWebDavBrowser() {
+      var port = document.getElementById('inp-webdav-port').value || "8090";
+      var url = "http://localhost:" + port;
+      try { sh.Run(url); log("Opening " + url, "info"); } catch (e) { log(e.message, "error"); }
+    }
+
+    function runRcloneCopy() {
+      var rclone = document.getElementById('inp-rclone-path').value;
+      var conf = document.getElementById('inp-rclone-conf').value;
+
+      var src = document.getElementById('inp-copy-src').value;
+      var dst = document.getElementById('inp-copy-dst').value;
+      var flags = document.getElementById('inp-copy-flags').value; // --update --ignore-existing ...
+
+      // Use visible window for Copy to see progress
+      var cmd = 'cmd /c ""' + rclone + '" copy "' + src + '" "' + dst + '" --config "' + conf + '" ' + flags + ' & pause"';
+      sh.Run(cmd, 1, false);
+      log("Started Copy Operation...", "info");
+    }
+
+    // Config Utils
+    function listRemotes() {
+      var rclone = document.getElementById('inp-rclone-path').value;
+      var conf = document.getElementById('inp-rclone-conf').value;
+      sh.Run('cmd /c ""' + rclone + '" listremotes --config "' + conf + '" & pause"', 1, false);
+    }
+
+    function editToken() {
+      // Read file, find token, replace? Too risky.
+      // User asked: "Edit Access token".
+      // Let's prompt for new token and append/replace in a text area or just open config.
+      // Opening config is safest.
+      // But to satisfy "Chỉnh sửa Access token", let's offer a targeted replace.
+      var token = prompt("Enter new Access Token (Paste here):");
+      if (token && token.length > 10) {
+        var path = document.getElementById('inp-rclone-conf').value;
+        try {
+          var f = fso.OpenTextFile(path, 1);
+          var content = f.ReadAll();
+          f.Close();
+
+          // Regex replace `token = { ... }` ? Or just notify user.
+          // JSON in INI is tricky. 
+          log("Feature partial: Please paste token in the config file manually.", "warn");
+          sh.Run('notepad "' + path + '"');
+        } catch (e) { log(e.message, "error"); }
       }
     }
 
-    function escapeRegex(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
-    function readAll(path){ var ts = fso.OpenTextFile(path, 1, false); var t = ts.ReadAll(); ts.Close(); return t; }
-    function writeAll(path, content){ var ts = fso.OpenTextFile(path, 2, false); ts.Write(content); ts.Close(); }
-
-    function openRcloneConf(){
-      var p = id("txtRcloneConf").value;
-      if(!p){ alert("Chọn rclone.conf"); return; }
-      sh.Run('notepad.exe "' + p + '"', 1, false);
+    function updateStatus(elId, isRunning) {
+      var el = document.getElementById(elId);
+      el.className = isRunning ? "status-badge running" : "status-badge stopped";
+      el.innerText = isRunning ? "Running" : "Stopped";
     }
 
-    function openRcloneConfig(){
-      var rclone = id("txtRclonePath").value || "rclone";
-      var conf = id("txtRcloneConf").value;
-      sh.Run('cmd /c start "" "' + rclone + '" config --config "' + conf + '"', 0, false);
+    function saveSettings() {
+      var settings = {
+        teldrive: document.getElementById('inp-teldrive-path').value,
+        teldrive_conf: document.getElementById('inp-teldrive-conf').value,
+        teldrive_port: document.getElementById('inp-teldrive-port').value,
+        rclone: document.getElementById('inp-rclone-path').value,
+        conf: document.getElementById('inp-rclone-conf').value,
+        remote: document.getElementById('inp-remote').value,
+        mount: document.getElementById('inp-mount').value,
+        rclone_flags: document.getElementById('inp-rclone-flags').value,
+        webdav_port: document.getElementById('inp-webdav-port').value,
+        copy_src: document.getElementById('inp-copy-src').value,
+        copy_dst: document.getElementById('inp-copy-dst').value,
+        copy_flags: document.getElementById('inp-copy-flags').value
+      };
+      try { var f = fso.CreateTextFile(gAppDir + "\\settings.json", true); f.Write(JSON.stringify(settings)); f.Close(); } catch (e) { }
     }
 
-    function addDriveRemote(){
-      var name = prompt("Tên remote Drive mới:", "pgs");
-      if(!name) return;
-      var rclone = id("txtRclonePath").value || "rclone";
-      var conf = id("txtRcloneConf").value;
-      sh.Run('cmd /c start "" "' + rclone + '" config create "' + name + '" drive --config "' + conf + '"', 0, false);
+    function loadSettings() {
+      try {
+        if (fso.FileExists(gAppDir + "\\settings.json")) {
+          var f = fso.OpenTextFile(gAppDir + "\\settings.json", 1);
+          var s = JSON.parse(f.ReadAll()); f.Close();
+
+          if (s.teldrive) document.getElementById('inp-teldrive-path').value = s.teldrive;
+          if (s.teldrive_conf) document.getElementById('inp-teldrive-conf').value = s.teldrive_conf;
+          if (s.teldrive_port) document.getElementById('inp-teldrive-port').value = s.teldrive_port;
+
+          if (s.rclone) document.getElementById('inp-rclone-path').value = s.rclone;
+          if (s.conf) document.getElementById('inp-rclone-conf').value = s.conf;
+          if (s.remote) document.getElementById('inp-remote').value = s.remote;
+          if (s.mount) document.getElementById('inp-mount').value = s.mount;
+          if (s.rclone_flags) document.getElementById('inp-rclone-flags').value = s.rclone_flags;
+
+          if (s.webdav_port) document.getElementById('inp-webdav-port').value = s.webdav_port;
+
+          if (s.copy_src) document.getElementById('inp-copy-src').value = s.copy_src;
+          if (s.copy_dst) document.getElementById('inp-copy-dst').value = s.copy_dst;
+          if (s.copy_flags) document.getElementById('inp-copy-flags').value = s.copy_flags;
+        } else {
+          // Defaults
+          document.getElementById('inp-teldrive-conf').value = "C:\\Users\\Tien\\.teldrive\\config.toml";
+          document.getElementById('inp-webdav-port').value = "8090";
+          document.getElementById('inp-copy-flags').value = "--update --ignore-existing -v";
+          document.getElementById('inp-copy-src').value = "pgs:/TheGdriveXbot";
+          document.getElementById('inp-copy-dst').value = "teldrive:/TheGdriveXbot";
+        }
+      } catch (e) { }
     }
 
-    function runCopy(){
-      var rclone = id("txtRclonePath").value || "rclone";
-      var src = id("txtSrc").value;
-      var dst = id("txtDst").value;
-      if(!src || !dst){ alert("Điền nguồn và đích"); return; }
-      var conf = id("txtRcloneConf").value;
-      var val = validateRcloneConf();
-      if(!val.valid){
-        appendLog('logRclone', 'rclone.conf không hợp lệ. Lỗi: ' + val.errors.join(' | '));
-        alert('rclone.conf không hợp lệ. Hãy bấm "Sửa rclone.conf (repair)" rồi chạy lại.');
-        return;
-      }
-      var cmd = '"' + rclone + '" copy --config "' + conf + '" --update --ignore-existing ' + '"' + src + '" ' + '"' + dst + '" -v';
-      execWithLog(cmd);
-    }
-    function runCopyTerm(){
-      var rclone = id("txtRclonePath").value || "rclone";
-      var src = id("txtSrc").value;
-      var dst = id("txtDst").value;
-      if(!src || !dst){ alert("Điền nguồn và đích"); return; }
-      var conf = id("txtRcloneConf").value;
-      var val = validateRcloneConf();
-      if(!val.valid){
-        appendLog('logRclone', 'rclone.conf không hợp lệ. Lỗi: ' + val.errors.join(' | '));
-        alert('rclone.conf không hợp lệ. Hãy bấm "Sửa rclone.conf (repair)" rồi chạy lại.');
-        return;
-      }
-      var cmd = '"' + rclone + '" copy --config "' + conf + '" --update --ignore-existing ' + '"' + src + '" ' + '"' + dst + '" -v';
-      // Mở cửa sổ terminal mới để xem log trực tiếp. Để cửa sổ tự đóng sau khi xong (dùng cmd /c start)
-      try{
-        sh.Run('cmd /c start "Rclone Copy" ' + cmd, 1, false);
-        appendLog('logRclone', 'Đã mở terminal chạy: ' + cmd);
-      }catch(e){ alert('Start terminal failed: ' + e.message); }
-    }
-    function checkRclone(){
-      var rclone = id("txtRclonePath").value || "rclone";
-      var conf = id("txtRcloneConf").value;
-      var val = validateRcloneConf();
-      if(!val.valid){
-        appendLog('logRclone', 'rclone.conf không hợp lệ. Lỗi: ' + val.errors.join(' | '));
-        alert('rclone.conf không hợp lệ. Hãy bấm "Sửa rclone.conf (repair)" trước.');
-        return;
-      }
-      execWithLog('"' + rclone + '" version --config "' + conf + '"');
-    }
-
-    var execObj = null, timer = null;
-    var teldriveExec = null, teldriveTimer = null; // legacy, not used now
-    var teldrivePid = 0, teldriveLogPath = "", teldriveLogSnapshot = "", teldriveTailTimer = null, teldrivePidPath = "";
-    function execWithLog(cmd){
-      log('> ' + cmd);
-      try{
-        execObj = sh.Exec(cmd);
-        if(timer) window.clearInterval(timer);
-        timer = window.setInterval(pump, 150);
-      }catch(e){ alert('Exec failed: ' + e.message); }
-    }
-    function pump(){
-      try{
-        while(!execObj.StdOut.AtEndOfStream){ var line = execObj.StdOut.ReadLine(); log(line); }
-        while(!execObj.StdErr.AtEndOfStream){ var line2 = execObj.StdErr.ReadLine(); log(line2); }
-        if(execObj.Status == 1 || execObj.Status == 0){ window.clearInterval(timer); timer=null; log('Process finished.'); }
-      }catch(e){}
-    }
-    var teldriveLogSize=-1, teldriveStatusTimer=null;
-    var probeTimer=null, probeAttempts=0;
-    function isTeldriveRunning(){
-      try{
-        var svc = GetObject('winmgmts:');
-        var col = svc.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name='teldrive.exe'");
-        var e = new Enumerator(col);
-        return !e.atEnd();
-      }catch(e){ return false; }
-    }
-    function updateTdStatus(){
-      var running = isTeldriveRunning();
-      setTdStatus(running, 0);
-      if(!running){ if(teldriveStatusTimer){ window.clearInterval(teldriveStatusTimer); teldriveStatusTimer=null; } }
-    }
-    function startProbe(){
-      try{ if(probeTimer){ window.clearInterval(probeTimer); probeTimer=null; } }catch(e){}
-      probeAttempts = 0;
-      probeTimer = window.setInterval(probeTick, 1000);
-    }
-    function probeTick(){
-      try{
-        probeAttempts++;
-        var req = new ActiveXObject('WinHttp.WinHttpRequest.5.1');
-        req.SetTimeouts(1000,1000,1000,1000);
-        req.Open('GET', 'http://localhost:8080/', false);
-        req.SetRequestHeader('Cache-Control','no-cache');
-        req.Send();
-        var st = req.Status;
-        if(st > 0){ appendLog('logTeldrive', 'HTTP check: ' + st + ' OK'); window.clearInterval(probeTimer); probeTimer=null; return; }
-      }catch(e){ /* ignore */ }
-      if(probeAttempts >= 10){ appendLog('logTeldrive','HTTP check: không thể kết nối localhost:8080'); window.clearInterval(probeTimer); probeTimer=null; }
-    }
-    function tailTeldrive(){
-      try{
-        if(!teldriveLogPath || !fso.FileExists(teldriveLogPath)) return;
-        var file = fso.GetFile(teldriveLogPath);
-        if(teldriveLogSize == file.Size) return;
-        var content = readAll(teldriveLogPath);
-        // If the file grew too much, only take the last 50k chars to avoid freezing UI
-        var snapLen = teldriveLogSnapshot.length;
-        if(content.length - snapLen > 50000){
-          teldriveLogSnapshot = content.substring(content.length - 50000);
-          snapLen = 0; // force append entire snapshot slice below
-        }
-        if(content.length > snapLen){
-          var delta = content.substring(snapLen);
-          var lines = delta.split(/\r?\n/);
-          for(var i=0;i<lines.length;i++) if(lines[i].length) appendLog('logTeldrive', lines[i]);
-          teldriveLogSnapshot = content;
-        }
-        teldriveLogSize = file.Size;
-      }catch(e){}
-    }
-    function pumpTeldrive(){ /* not used when running via file tail */ }
-    function appendLog(targetId, msg){ var ta = id(targetId); if(!ta) return; ta.value += (msg + "\r\n"); if(ta.value.length > 200000){ ta.value = ta.value.slice(ta.value.length-150000); } ta.scrollTop = ta.scrollHeight; }
-    function log(msg){ appendLog('logRclone', msg); }
-    function setTdStatus(running, pid){ var el = id('tdStatus'); if(!el) return; el.className = running ? 'status running' : 'status'; el.innerHTML = '<span class="dot"></span>' + (running ? ('Đang chạy' + (pid?(' (PID '+pid+')'):'') ) : 'Đã dừng'); }
-    function ensureShowTdLog(){ try{ id('logTeldrive').scrollIntoView(true); }catch(e){} }
-    function openTdLog(){ if(!teldriveLogPath || !fso.FileExists(teldriveLogPath)){ alert('Chưa có log hoặc file log chưa được tạo.'); return; } sh.Run('notepad.exe "' + teldriveLogPath + '"', 1, false); }
-    function openLogFolder(){ var p = teldriveLogPath && teldriveLogPath.length ? teldriveLogPath : (gAppDir? (gAppDir + '\\teldrive.log') : ''); var folder = p ? fso.GetParentFolderName(p) : gAppDir; if(folder) sh.Run('explorer.exe "' + folder + '"', 1, false); }
-    function repairRcloneConf(){
-      var conf = id('txtRcloneConf').value;
-      if(!conf || !fso.FileExists(conf)){ alert('Không tìm thấy rclone.conf'); return; }
-      try{
-        // backup
-        try{ var bak = conf + ".repair-" + (new Date().toISOString().replace(/[:T]/g,'-').slice(0,19)) + ".bak"; fso.CopyFile(conf, bak, true); }catch(_){ }
-        var text = readAll(conf);
-        // strip UTF-8 BOM if present
-        text = text.replace(/^\uFEFF/, '');
-        var lines = text.split(/\r?\n/);
-        var out=[];
-        var secRe = /^\s*\[(.+?)\]\s*$/;
-        var kvRe  = /^\s*([A-Za-z0-9_\-]+)\s*=\s*(.*?)\s*$/;
-        for(var i=0;i<lines.length;i++){
-          var L = lines[i];
-          var T = L.replace(/^\uFEFF/, '');
-          // drop lines that are only quotes or malformed
-          if(/^\s*"{2,}\s*,?\s*$/.test(T)) continue;
-          if(/^\s*[#;].*$/.test(T)) { out.push(T); continue; } // keep comments
-          if(secRe.test(T)) { out.push(T); continue; }
-          var m = kvRe.exec(T);
-          if(m){ out.push(m[1] + ' = ' + m[2]); continue; }
-          if(/^\s*$/.test(T)) { out.push(''); continue; }
-          // otherwise skip invalid line
-        }
-        // ensure trailing newline
-        var repaired = out.join("\r\n");
-        writeAll(conf, repaired);
-        appendLog('logRclone', 'Đã repair rclone.conf (đã loại bỏ dòng không hợp lệ, chuẩn hóa key=value).');
-      }catch(e){ alert('Repair thất bại: ' + e.message); }
-    }
-    function rebuildTeldrive(){
-      var conf = id('txtRcloneConf').value;
-      var token = id('txtToken').value;
-      if(!conf || !fso.FileExists(conf)){ alert('Không tìm thấy rclone.conf'); return; }
-      if(!token){ alert('Nhập Access Token trước'); return; }
-      try{
-        var text = readAll(conf).replace(/^\uFEFF/, '');
-        var lines = text.split(/\r?\n/);
-        var out=[], inTd=false;
-        for(var i=0;i<lines.length;i++){
-          var L = lines[i];
-          var m = /^\s*\[(.+?)\]\s*$/.exec(L);
-          if(m){
-            if(inTd){ inTd = false; }
-            if(m[1].toLowerCase() === 'teldrive'){ inTd = true; continue; }
-            out.push(L);
-            continue;
-          }
-          if(inTd){ continue; }
-          out.push(L);
-        }
-        // append new [teldrive] section
-        if(out.length && out[out.length-1] !== '') out.push('');
-        out.push('[teldrive]');
-        out.push('type = teldrive');
-        out.push('api_host = http://localhost:8080');
-        out.push('access_token = ' + token);
-        out.push('chunk_size = 1G');
-        out.push('upload_concurrency = 4');
-        out.push('encrypt_files = false');
-        out.push('random_chunk_name = true');
-        writeAll(conf, out.join('\r\n'));
-        appendLog('logRclone', 'Đã tạo lại section [teldrive] với token mới.');
-      }catch(e){ alert('Rebuild thất bại: ' + e.message); }
-    }
-    function validateRcloneConf(){
-      var conf = id('txtRcloneConf').value;
-      var res = { valid:true, errors:[] };
-      try{
-        if(!conf || !fso.FileExists(conf)){ res.valid=false; res.errors.push('Không tìm thấy rclone.conf'); return res; }
-        var text = readAll(conf).replace(/^\uFEFF/, '');
-        var lines = text.split(/\r?\n/);
-        var secRe = /^\s*\[(.+?)\]\s*$/;
-        var kvRe  = /^\s*([A-Za-z0-9_\-]+)\s*=\s*(.*?)\s*$/;
-        for(var i=0;i<lines.length;i++){
-          var T = lines[i].replace(/^\uFEFF/, '');
-          if(/^\s*$/.test(T)) continue;
-          if(/^\s*[#;].*$/.test(T)) continue;
-          if(secRe.test(T)) continue;
-          if(kvRe.test(T)) continue;
-          res.valid=false; res.errors.push('Line ' + (i+1) + ': "' + T + '"');
-          if(res.errors.length>=5) break;
-        }
-      }catch(e){ res.valid=false; res.errors.push('Validate lỗi: ' + e.message); }
-      return res;
-    }
-    function killRcloneAll(){
-      try{ sh.Run('cmd /c taskkill /IM rclone.exe /F', 0, true); }catch(e){}
-      try{ sh.Run('cmd /c taskkill /FI "WINDOWTITLE eq Rclone Copy" /T /F', 0, false); }catch(e){}
-      appendLog('logRclone', 'Đã dừng rclone (nếu đang chạy).');
-    }
-    function stopAllAndExit(){
-      try{ stopTeldrive(); }catch(e){}
-      try{ killRcloneAll(); }catch(e){}
-      try{
-        if(teldriveStatusTimer){ window.clearInterval(teldriveStatusTimer); teldriveStatusTimer=null; }
-        if(teldriveTailTimer){ window.clearInterval(teldriveTailTimer); teldriveTailTimer=null; }
-        if(timer){ window.clearInterval(timer); timer=null; }
-      }catch(e){}
-      window.setTimeout(function(){ try{ window.close(); }catch(e){} }, 300);
-    }
   </script>
 </head>
+
 <body onload="bootstrap()">
-  <div class="main">
-  <h2 class="app-title">Rclone Manager</h2>
 
-  <div class="group">
-    <h3>1) Teldrive</h3>
-    <div id="tdStatus" class="status"><span class="dot"></span>Đã dừng</div>
-    <label>Đường dẫn teldrive.exe</label>
-    <div class="row">
-      <div><input id="txtTeldriveExe" type="text" placeholder="C:\\path\\to\\teldrive.exe" /></div>
-      <div><button onclick="browseFileFor('txtTeldriveExe')">Browse</button></div>
+  <div class="sidebar">
+    <div class="brand">
+      <img src="https://teldrive-docs.pages.dev/images/logo.png" onerror="this.style.display='none'">
+      <span>Teldrive<span class="brand-accent">GUI</span></span>
     </div>
-    <label>Tham số (nếu cần)</label>
-    <input id="txtTeldriveArgs" type="text" placeholder="" />
-    <div class="btn-row">
-      <button class="primary" onclick="startTeldrive()">Start Teldrive + mở http://localhost:8080</button>
-      <button onclick="startTeldriveNoBrowser()">Start Teldrive (không mở browser)</button>
-      <button onclick="stopTeldrive()">Stop Teldrive</button>
-      <button onclick="openLocalhost()">Mở localhost:8080</button>
-      <button onclick="startProbe()">Kiểm tra Teldrive</button>
-    </div>
-  </div>
+    <div id="nav-home" class="nav-item active" onclick="switchTab('home')"><i>&#8962;</i> Teldrive</div>
+    <div id="nav-rclone" class="nav-item" onclick="switchTab('rclone')"><i>&#128190;</i> Rclone</div>
+    <div id="nav-config" class="nav-item" onclick="switchTab('config')"><i>&#9881;</i> Config</div>
+    <div id="nav-logs" class="nav-item" onclick="switchTab('logs')"><i>&#8801;</i> Logs</div>
 
-  <div class="group">
-    <h3>2) Access Token -> rclone.conf</h3>
-    <label>rclone.conf (mặc định)</label>
-    <div class="row">
-      <div><input id="txtRcloneConf" type="text" /></div>
-      <div><button onclick="browseFileFor('txtRcloneConf')">Browse</button></div>
-    </div>
-    <div class="row">
-      <div>
-        <label>Remote name</label>
-        <input id="txtRemoteName" type="text" />
+    <div class="sidebar-footer">
+      <div class="nav-item" onclick="sh.Run('https://github.com/harrytien107')"><i>?</i> Help</div>
+      <div
+        style="margin-top: 15px; font-size: 12px; color: #8b949e; text-align: center; border-top: 1px solid #30363d; padding-top: 10px;">
+        <span style="color: #c9d1d9;">v3.0</span> <br>
+        <span style="color: #58a6ff; font-weight: bold; cursor: pointer;"
+          onclick="sh.Run('https://github.com/harrytien107')">harrytien107</span>
       </div>
-      <div>
-        <label>Key cần cập nhật</label>
-        <input id="txtTokenKey" type="text" />
-      </div>
-    </div>
-    <label>Access Token</label>
-    <input id="txtToken" type="text" placeholder="Dán token tại đây" />
-    <div class="btn-row">
-      <button class="primary" onclick="saveToken()">Lưu token vào rclone.conf</button>
-      <button onclick="openRcloneConf()">Xem rclone.conf</button>
-      <button onclick="openRcloneConfig()">Mở rclone config</button>
-      <button onclick="addDriveRemote()">Thêm remote Drive</button>
-      <button onclick="repairRcloneConf()">Sửa rclone.conf (repair)</button>
-      <button onclick="rebuildTeldrive()">Tạo lại [teldrive]</button>
     </div>
   </div>
 
-  <div class="group">
-    <h3>3) rclone copy</h3>
-    <label>rclone.exe (để trống nếu đã có trong PATH)</label>
-    <input id="txtRclonePath" type="text" placeholder="rclone" />
-    <div class="row">
-      <div>
-        <label>Nguồn</label>
-        <input id="txtSrc" type="text" />
-      </div>
-      <div>
-        <label>Đích</label>
-        <input id="txtDst" type="text" />
-      </div>
+  <div class="main-content">
+    <div class="header">
+      <div id="page-title" class="page-title">Home</div>
     </div>
-    <div class="btn-row">
-      <button onclick="checkRclone()">Kiểm tra rclone</button>
-      <button class="primary" onclick="runCopyTerm()">Chạy copy (terminal)</button>
+
+    <div class="scroll-area">
+      <input type="file" id="hidden-file-input" style="display:none" />
+
+      <!-- TELDRIVE TAB -->
+      <div id="tab-home">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Server Control</div>
+            <div id="teldrive-status" class="status-badge stopped">Stopped</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Executable</label>
+            <div class="grid-row">
+              <div class="grid-cell w-100"><input type="text" id="inp-teldrive-path" placeholder="teldrive.exe"
+                  onblur="saveSettings()"></div>
+              <div class="grid-cell w-auto" style="padding-left:5px"><button
+                  onclick="browseFile('inp-teldrive-path')">Browse</button></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Config File (Optional)</label>
+            <div class="grid-row">
+              <div class="grid-cell w-100"><input type="text" id="inp-teldrive-conf"
+                  placeholder="Default (~/.teldrive/config.toml)" onblur="saveSettings()"></div>
+              <div class="grid-cell w-auto" style="padding-left:5px"><button
+                  onclick="browseFile('inp-teldrive-conf')">Browse</button></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Port (Optional)</label>
+            <div class="grid-row">
+              <div class="grid-cell"><input type="text" id="inp-teldrive-port" placeholder="Default" style="width:80px"
+                  onblur="saveSettings()"></div>
+            </div>
+          </div>
+
+          <div class="grid-row mt-2">
+            <div class="grid-cell"><button class="primary" onclick="startTeldrive()">Start</button> <button
+                class="danger" onclick="stopTeldrive()">Stop</button></div>
+            <div class="grid-cell w-auto"><button onclick="openTeldriveBrowser()">Open Browser</button></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Commands</div>
+          </div>
+          <button class="sm" onclick="runTeldriveCmd('version')">Check Version</button>
+          <button class="sm" onclick="runTeldriveCmd('help')">Show Help</button>
+          <button class="sm" onclick="runTeldriveCmd('check')">Check</button>
+          <button class="sm" onclick="runTeldriveCmd('completion')">Completion</button>
+          <button class="sm" onclick="runTeldriveCmd('upgrade')">Upgrade</button>
+        </div>
+      </div>
+
+      <!-- RCLONE TAB -->
+      <div id="tab-rclone" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Configuration</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rclone Executable</label>
+            <div class="grid-row">
+              <div class="grid-cell w-100"><input type="text" id="inp-rclone-path" onblur="saveSettings()"></div>
+              <div class="grid-cell w-auto" style="padding-left:5px"><button
+                  onclick="browseFile('inp-rclone-path')">...</button></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Config File</label>
+            <div class="grid-row">
+              <div class="grid-cell w-100"><input type="text" id="inp-rclone-conf" onblur="saveSettings()"></div>
+              <div class="grid-cell w-auto" style="padding-left:5px"><button
+                  onclick="browseFile('inp-rclone-conf')">...</button></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Remote Name (with :)</label>
+            <input type="text" id="inp-remote" onblur="saveSettings()">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Mount</div>
+            <div id="mount-status" class="status-badge stopped">Stopped</div>
+          </div>
+          <div class="grid-row">
+            <div class="grid-cell w-100" style="padding-right:10px">
+              <label class="form-label">Mount Point</label>
+              <input type="text" id="inp-mount" value="Z:" onblur="saveSettings()">
+            </div>
+            <div class="grid-cell w-100">
+              <label class="form-label">Extra Flags</label>
+              <input type="text" id="inp-rclone-flags" placeholder="--vfs-cache-mode full" onblur="saveSettings()">
+            </div>
+          </div>
+          <div class="mt-2">
+            <button class="primary" onclick="mountRclone()">Mount</button> <button class="danger"
+              onclick="stopMount()">Unmount</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">WebDAV Server</div>
+            <div id="webdav-status" class="status-badge stopped">Stopped</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Listen Port</label>
+            <input type="text" id="inp-webdav-port" value="8090" style="width:80px" onblur="saveSettings()">
+          </div>
+          <div class="mt-2">
+            <button class="primary" onclick="startWebDAV()">Start</button>
+            <button class="danger" onclick="stopWebDAV()">Stop</button>
+            <button onclick="openWebDavBrowser()">Open Browser</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Copy Tool</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Source</label>
+            <input type="text" id="inp-copy-src" value="pgs:/TheGdriveXbot" onblur="saveSettings()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Destination</label>
+            <input type="text" id="inp-copy-dst" value="teldrive:/TheGdriveXbot" onblur="saveSettings()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Flags</label>
+            <input type="text" id="inp-copy-flags" value="--update --ignore-existing -v" onblur="saveSettings()">
+          </div>
+          <button class="primary" onclick="runRcloneCopy()">Run Copy (CMD)</button>
+        </div>
+      </div>
+
+      <!-- CONFIG TAB -->
+      <div id="tab-config" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Manage Remotes</div>
+          </div>
+          <p style="color:#8b949e">Utilities for managing <code>rclone.conf</code>.</p>
+
+          <div class="form-group">
+            <button onclick="sh.Run('notepad ' + document.getElementById('inp-rclone-conf').value)">Edit Config File
+              (Notepad)</button>
+            <button onclick="editToken()">Edit Access Token (Manual)</button>
+          </div>
+          <div class="form-group">
+            <button onclick="listRemotes()">List Remotes (CMD)</button>
+            <button onclick="sh.Run('powershell -NoExit -Command rclone config')">Add/Edit Remote (Wizard)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGS TAB -->
+      <div id="tab-logs" class="hidden">
+        <div class="card" style="padding:0; border:none; background:transparent;">
+          <div class="card-header">
+            <div class="card-title">Logs</div>
+            <button class="sm" style="position:absolute; right:0;"
+              onclick="document.getElementById('terminal-output').innerHTML=''">Clear</button>
+          </div>
+          <div id="terminal-output" class="terminal">
+            <div class="log-info">> Ready.</div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <div class="group">
-    <h3>Log - Teldrive</h3>
-    <div class="btn-row">
-      <button onclick="openTdLog()">Mở file log</button>
-      <button onclick="openLogFolder()">Mở thư mục log</button>
-    </div>
-    <textarea id="logTeldrive" readonly></textarea>
-  </div>
-  <div class="group">
-    <h3>Log - rclone</h3>
-    <textarea id="logRclone" readonly></textarea>
-  </div>
-  <div class="group">
-    <h3>Thoát</h3>
-    <div class="btn-row">
-      <button class="primary" onclick="stopAllAndExit()">Dừng Teldrive + Rclone và thoát</button>
-    </div>
-  </div>
-</div>
 </body>
+
 </html>

@@ -3,3 +3,7 @@ rclone.conf
 
 # Ignore local VS Code workspace file
 TeldriveRcloneApp.code-workspace
+TeldriveRclonev1.hta.bak
+settings.json
+window_state.json
+ui-ux-pro-max.md
