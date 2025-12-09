@@ -5,7 +5,6 @@ Một App để chạy và cấu hình `rclone` cùng với giao diện HTA cho 
 ## Nội dung repo
 
 - `TeldriveRclone.hta` : Giao diện HTA (HTML Application) dùng trên Windows để khởi chạy hoặc hiển thị trạng thái.
-- `Teldrive HTA Visibility & Logging.md` : Ghi chú về tính năng hiển thị và logging của HTA.
 
 ## Cách dùng
 - Bấm vào file hta và try to understand on your own.
