@@ -5,8 +5,8 @@
   <meta http-equiv="x-ua-compatible" content="IE=edge" />
   <title>Teldrive Rclone GUI - Pro Max</title>
   <HTA:APPLICATION ID="oHTA" APPLICATIONNAME="TeldriveRclone" BORDER="thin" BORDERSTYLE="normal" CAPTION="yes"
-    ICON="logo.ico" MAXIMIZEBUTTON="yes" MINIMIZEBUTTON="yes" SHOWINTASKBAR="yes" SINGLEINSTANCE="yes" SYSMENU="yes"
-    VERSION="3.0" WINDOWSTATE="normal" SCROLL="no" INNERBORDER="no" SELECTION="no" CONTEXTMENU="yes" />
+    MAXIMIZEBUTTON="yes" MINIMIZEBUTTON="yes" SHOWINTASKBAR="yes" SINGLEINSTANCE="yes" SYSMENU="yes" VERSION="3.0"
+    WINDOWSTATE="normal" SCROLL="no" INNERBORDER="no" SELECTION="no" CONTEXTMENU="yes" />
   <style>
     /* Absolute Positioning Layout V3 - Medium Size */
     * {
@@ -42,7 +42,8 @@
     }
 
     .brand {
-      display: block;
+      display: flex;
+      align-items: center;
       margin-bottom: 2rem;
       padding-left: 0.2rem;
     }
@@ -50,7 +51,6 @@
     .brand img {
       width: 32px;
       height: 32px;
-      vertical-align: middle;
       margin-right: 10px;
     }
 
@@ -58,7 +58,6 @@
       font-weight: 600;
       font-size: 1.3rem;
       color: #c9d1d9;
-      vertical-align: middle;
     }
 
     .brand-accent {
@@ -264,6 +263,7 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 0.95rem;
+      font-family: monospace;
     }
 
     button:hover {
@@ -378,18 +378,13 @@
         gAppDir = fso.GetParentFolderName(p);
       } catch (e) { }
 
-      ensureLogo();
 
       switchTab('home');
       loadSettings();
       log("System Ready. V3.0", "success");
     }
 
-    function ensureLogo() {
-      try {
-        // Just checking if we can set the icon. Handled by HTA tag mostly.
-      } catch (e) { }
-    }
+
 
     function switchTab(tabId) {
       document.getElementById('tab-home').className = tabId == 'home' ? '' : 'hidden';
